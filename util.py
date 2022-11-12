@@ -20,3 +20,24 @@ def read_message_text_file(message_text_file):
     message_bytes = string_as_byte_array(message_string)
     message_bits = byte_array_as_bit_array(message_bytes)
     return(message_string, message_bytes, message_bits)
+
+def hide_message_in_image(message_string, cover_image):
+    encoded_image = cover_image.copy()
+    
+    message_bytes = string_as_byte_array(message_string)
+    message_bits = byte_array_as_bit_array(message_bytes)
+    max_bit = len(message_bits) - 1
+    bit = 0
+    
+    nrows, ncolumns, ncolors = cover_image.shape
+    for row in range(nrows):
+        for column in range(ncolumns):
+            for color in range(ncolors):
+                if bit > max_bit:
+                    return encoded_image
+                
+                encoded_image[row][column][color] &= message_bits[bit]
+                bit += 1
+    
+    return encoded_image
+    

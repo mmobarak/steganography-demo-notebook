@@ -136,3 +136,47 @@ def extract_message_from_image_MSB(image):
                     
     return message
 
+
+def hide_message_in_audio(message_string, cover_audio):
+    cover_audio = bytearray(cover_audio)
+    message_bytes = string_as_byte_array(message_string)
+    message_bits = byte_array_as_bit_array(message_bytes)
+    max_bit = len(message_bits) - 1
+    bit = 0
+    
+    for i in range(len(cover_audio)):
+        if bit > max_bit:
+            # TODO - mark end of message
+            return cover_audio
+
+        if i % 2 == 0: # samples are 16 bits, write to the LSB only
+            message_bit = message_bits[bit]
+            cover_audio[i] &= 0xFE
+            cover_audio[i] |= message_bit
+            bit += 1
+    
+    return cover_audio
+
+def extract_message_from_audio(cover_audio):
+    message = ""
+    message_byte = 0
+    bits_in_byte = 0
+  
+    for i in range(len(cover_audio)):
+        if i % 2 == 0: # samples are 16 bits, write to the LSB only
+            message_bit = cover_audio[i] & 0x01
+            message_byte |= message_bit
+            bits_in_byte += 1
+
+            if bits_in_byte == 8:
+                message += chr(message_byte)
+                message_byte = 0
+                bits_in_byte = 0
+            else:
+                message_byte <<= 1
+
+            # TODO - detect end of message
+            if len(message) > 1000:
+                return message
+                    
+    return message

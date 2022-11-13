@@ -135,3 +135,4 @@ def extract_message_from_image_MSB(image):
                     return message
                     
     return message
+

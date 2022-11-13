@@ -1,5 +1,6 @@
 import cv2
 import itertools
+import matplotlib.pyplot as plt
 
 def read_image_file(image_file):
     img = cv2.imread(image_file)
@@ -9,7 +10,7 @@ def string_as_byte_array(string):
     return [ord(c) for c in string]
     
 def bits_from_byte(byte):
-    return [ (byte >> bit) & 1 for bit in range(1,9) ]
+    return [ (byte >> bit) & 1 for bit in range(7,-1,-1) ]
 
 def byte_array_as_bit_array(bytes):
     return list(itertools.chain.from_iterable([bits_from_byte(byte) for byte in bytes]))
@@ -34,10 +35,51 @@ def hide_message_in_image(message_string, cover_image):
         for column in range(ncolumns):
             for color in range(ncolors):
                 if bit > max_bit:
+                    # TODO - mark end of message
                     return encoded_image
                 
-                encoded_image[row][column][color] &= message_bits[bit]
+                message_bit = message_bits[bit]
+                color_byte = encoded_image[row][column][color]
+                color_byte &= 0xFE
+                color_byte |= message_bit
+                encoded_image[row][column][color] = color_byte
                 bit += 1
     
     return encoded_image
-    
+        
+def extract_message_from_image(image):
+    message = ""
+    message_byte = 0
+    bits_in_byte = 0
+  
+    nrows, ncolumns, ncolors = image.shape
+    for row in range(nrows):
+        for column in range(ncolumns):
+            for color in range(ncolors):
+                message_bit = image[row][column][color] & 0x01
+                message_byte |= message_bit
+                bits_in_byte += 1
+                
+                if bits_in_byte == 8:
+                    message += chr(message_byte)
+                    message_byte = 0
+                    bits_in_byte = 0
+                else:
+                    message_byte <<= 1
+                    
+                # TODO - detect end of message
+                if len(message) > 1000:
+                    return message
+                    
+    return message
+  
+def show_images(images):
+    fig = plt.figure(figsize=(20, 7))
+    rows = 1
+    cols = 2
+
+    for i, image in enumerate(images):
+        fig.add_subplot(rows, cols, i + 1)
+        plt.imshow(image[0])
+        plt.axis('off')
+        plt.title(image[1])
